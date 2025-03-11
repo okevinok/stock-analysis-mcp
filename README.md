@@ -2,6 +2,10 @@
 
 This is a Model Context Protocol (MCP) server that provides stock market data from Alpha Vantage API. It allows Claude and other MCP clients to access real-time and historical stock data.
 
+<a href="https://glama.ai/mcp/servers/1ujui2kmxd">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/1ujui2kmxd/badge" alt="Alpha Vantage Stock Server MCP server" />
+</a>
+
 ## Features
 
 - Get intraday stock data with customizable intervals
