@@ -119,4 +119,4 @@ Example usage in Claude:
 
 ## License
 
-ISC 
+MIT 
