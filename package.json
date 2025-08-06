@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:question-bank": "node dist/questionBank.js",
     "dev": "ts-node --esm src/index.ts",
+    "dev:question-bank": "ts-node --esm src/questionBank.ts",
     "test": "node dist/test.js"
   },
   "keywords": [

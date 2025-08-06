@@ -6,3 +6,5 @@ mcp-server-alpha-vantage.log
 
 # Text files
 *.txt 
+.history
+dist

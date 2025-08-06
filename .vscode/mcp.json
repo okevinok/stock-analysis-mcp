@@ -1,0 +1,26 @@
+{
+	"servers": {
+        "alpha-vantage": {
+            "command": "node",
+            "args": ["/home/wlq/mcp-test/stock-analysis-mcp/dist/index.js"],
+            "env": {
+                "ALPHA_VANTAGE_API_KEY": "8BBKJZT9HDPIM9A6"
+            } 
+        },
+        "baidu-map-mcp": {
+            "type": "sse",
+            "url": "https://mcp.api-inference.modelscope.net/137dde6db9794b/sse"
+        },
+        "baidu-maps": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@baidumap/mcp-server-baidu-map"
+            ],
+            "env": {
+                "BAIDU_MAP_API_KEY": "yoHJ2L69vJLHCQ2LOuaQAfnJL5Esp3MS"
+            }
+        }
+	},
+	"inputs": []
+}

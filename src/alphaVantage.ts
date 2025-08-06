@@ -38,7 +38,9 @@ export async function getStockData(symbol: string | string[], interval: string |
             timeSeriesKey = `Time Series (${intervalStr})`;
         }
 
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+            proxy: false
+        });
 
         // Check for error messages from Alpha Vantage
         if (response.data['Error Message']) {
@@ -108,7 +110,9 @@ export async function getStockAlerts(symbol: string | string[], threshold: numbe
 
         // Get daily stock data for analysis
         const url = `${BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbolStr}&outputsize=compact&apikey=${API_KEY}`;
-        const response = await axios.get(url);
+        const response = await axios.get(url,{
+            proxy: false
+        });
 
         if (response.data['Error Message']) {
             throw new Error(response.data['Error Message']);
