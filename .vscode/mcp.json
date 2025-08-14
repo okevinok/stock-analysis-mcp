@@ -7,6 +7,13 @@
                 "ALPHA_VANTAGE_API_KEY": "8BBKJZT9HDPIM9A6"
             } 
         },
+        "question-answer": {
+            "command": "node",
+            "args": ["/home/wlq/mcp-test/stock-analysis-mcp/dist/questionBank.js"],
+            "env": {
+                "ALPHA_VANTAGE_API_KEY": "8BBKJZT9HDPIM9A6"
+            } 
+        },
         "baidu-map-mcp": {
             "type": "sse",
             "url": "https://mcp.api-inference.modelscope.net/137dde6db9794b/sse"
@@ -20,6 +27,18 @@
             "env": {
                 "BAIDU_MAP_API_KEY": "yoHJ2L69vJLHCQ2LOuaQAfnJL5Esp3MS"
             }
+        },
+        "akshare-mcp": {
+            "command": "/home/wlq/miniconda3/bin/python",
+            "args": [
+                "/home/wlq/mcp-test/stock-analysis-mcp/mcp-akshare-main/main.py"
+            ]
+        },
+        "akshare_mcp-tonyong": {
+            "command": "/home/wlq/miniconda3/bin/python",
+            "args": [
+                "/home/wlq/mcp-test/stock-analysis-mcp/akshare_mcp-main/akshare_mcp/server.py",
+            ]
         }
 	},
 	"inputs": []

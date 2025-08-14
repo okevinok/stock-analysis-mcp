@@ -18,7 +18,17 @@ const questionsDatabase: Question[] = [
         id: 1,
         title: "二次函数的图像分析",
         description: "观察图像中的二次函数图像，请分析该函数的对称轴、顶点坐标，并写出函数的解析式。",
-        imageUrl: "https://example.com/quadratic-function.png",
+        // 使用简单的ASCII图示意
+        imageUrl: "data:text/plain;base64," + Buffer.from(`
+        y
+        |
+        |     *
+        |   *   *
+        | *       *
+        |*         *
+        +---+---+---+--- x
+            2
+        `).toString('base64'),
         imageDescription: "图像显示一个开口向上的抛物线，顶点在(2, -1)，经过点(0, 3)和(4, 3)",
         referenceAnswer: "对称轴为x=2，顶点坐标为(2, -1)，函数解析式为y = (x-2)² - 1 或 y = x² - 4x + 3",
         difficulty: 'medium',

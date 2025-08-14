@@ -1,7 +1,9 @@
+// 修改题库服务以支持图片内容
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import dotenv from "dotenv";
+import axios from "axios";
 import { 
     getRandomQuestion, 
     getQuestionById, 
@@ -25,7 +27,27 @@ const server = new McpServer({
 // 用于存储当前会话的题目（简单的内存存储）
 let currentQuestion: Question | null = null;
 
-// Add a resource for question data
+// 获取图片数据的辅助函数
+async function fetchImageAsBase64(imageUrl: string): Promise<string | null> {
+    try {
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer',
+            timeout: 10000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const base64 = Buffer.from(response.data).toString('base64');
+        const contentType = response.headers['content-type'] || 'image/jpeg';
+        return `data:${contentType};base64,${base64}`;
+    } catch (error) {
+        console.error('获取图片失败:', error);
+        return null;
+    }
+}
+
+// Add a resource for question data with image support
 server.resource(
     "question-data",
     new ResourceTemplate("question://{id}", { list: undefined }),
@@ -47,7 +69,8 @@ server.resource(
                 tags: question.tags,
                 imageUrl: question.imageUrl,
                 imageDescription: question.imageDescription,
-                hasImage: !!question.imageUrl
+                hasImage: !!question.imageUrl,
+                referenceAnswer: question.referenceAnswer
             };
 
             return {
@@ -63,19 +86,19 @@ server.resource(
     }
 );
 
-// Tool: 获取随机题目
+// Tool: 获取随机题目（支持图片显示）
 server.tool(
     "get-random-question",
     {
         subject: z.string().optional().describe("指定科目（可选），如：数学、物理、化学、英语"),
-        difficulty: z.enum(["easy", "medium", "hard"]).optional().describe("指定难度（可选）：easy（简单）、medium（中等）、hard（困难）")
+        difficulty: z.enum(["easy", "medium", "hard"]).optional().describe("指定难度（可选）：easy（简单）、medium（中等）、hard（困难）"),
+        showImage: z.boolean().optional().describe("是否显示图片内容（默认为true）")
     },
-    async ({ subject, difficulty }) => {
+    async ({ subject, difficulty, showImage = true }) => {
         try {
             let question: Question;
             
             if (subject && difficulty) {
-                // 根据科目和难度筛选
                 const questions = getQuestionsBySubject(subject).filter(q => q.difficulty === difficulty);
                 if (questions.length === 0) {
                     return {
@@ -85,7 +108,6 @@ server.tool(
                 }
                 question = questions[Math.floor(Math.random() * questions.length)];
             } else if (subject) {
-                // 仅根据科目筛选
                 const questions = getQuestionsBySubject(subject);
                 if (questions.length === 0) {
                     return {
@@ -95,21 +117,41 @@ server.tool(
                 }
                 question = questions[Math.floor(Math.random() * questions.length)];
             } else if (difficulty) {
-                // 仅根据难度筛选
                 const questions = getQuestionsByDifficulty(difficulty);
                 question = questions[Math.floor(Math.random() * questions.length)];
             } else {
-                // 完全随机
                 question = getRandomQuestion();
             }
 
             // 保存当前题目到会话
             currentQuestion = question;
 
-            const result = formatQuestionForDisplay(question);
-            return {
-                content: [{ type: "text", text: result }]
-            };
+            // 构建响应内容
+            const content: any[] = [];
+            
+            // 添加文本内容
+            const textContent = await formatQuestionForDisplay(question, false);
+            content.push({ type: "text", text: textContent });
+            
+            // 如果有图片且需要显示，添加图片内容
+            if (showImage && question.imageUrl) {
+                const imageData = await fetchImageAsBase64(question.imageUrl);
+                if (imageData) {
+                    content.push({
+                        type: "image",
+                        data: imageData,
+                        mimeType: "image/jpeg"
+                    });
+                } else {
+                    // 图片获取失败时的备选方案
+                    content.push({
+                        type: "text",
+                        text: `\n🖼️ **题目图片**: ${question.imageUrl}\n（图片加载失败，请手动访问链接查看）`
+                    });
+                }
+            }
+
+            return { content };
         } catch (error) {
             return {
                 content: [{ type: "text", text: `获取题目失败: ${error instanceof Error ? error.message : String(error)}` }],
@@ -160,16 +202,17 @@ server.tool(
     },
     async ({ answer, questionId }) => {
         try {
-            let question: Question | null = null;
+            let question: Question | undefined = undefined;
 
             if (questionId) {
-                question = getQuestionById(questionId);
-                if (!question) {
+                const foundQuestion = getQuestionById(questionId);
+                if (!foundQuestion) {
                     return {
                         content: [{ type: "text", text: `题目 ID ${questionId} 不存在` }],
                         isError: true
                     };
                 }
+                question = foundQuestion;
             } else if (currentQuestion) {
                 question = currentQuestion;
             } else {
@@ -210,16 +253,17 @@ server.tool(
     },
     async ({ questionId }) => {
         try {
-            let question: Question | null = null;
+            let question: Question | undefined = undefined;
 
             if (questionId) {
-                question = getQuestionById(questionId);
-                if (!question) {
+                const foundQuestion = getQuestionById(questionId);
+                if (!foundQuestion) {
                     return {
                         content: [{ type: "text", text: `题目 ID ${questionId} 不存在` }],
                         isError: true
                     };
                 }
+                question = foundQuestion;
             } else if (currentQuestion) {
                 question = currentQuestion;
             } else {
@@ -319,7 +363,7 @@ server.tool(
 /**
  * 格式化题目显示
  */
-function formatQuestionForDisplay(question: Question): string {
+function formatQuestionForDisplay(question: Question, includeImage: boolean = true): string {
     const difficultyEmoji = question.difficulty === 'easy' ? '🟢' : question.difficulty === 'medium' ? '🟡' : '🔴';
     const difficultyText = question.difficulty === 'easy' ? '简单' : question.difficulty === 'medium' ? '中等' : '困难';
 
@@ -330,7 +374,7 @@ function formatQuestionForDisplay(question: Question): string {
 **题目描述**:
 ${question.description}`;
 
-    if (question.imageUrl) {
+    if (question.imageUrl && includeImage) {
         result += `\n\n🖼️ **图片**: ${question.imageUrl}`;
     }
 
