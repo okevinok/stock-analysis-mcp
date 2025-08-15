@@ -12,6 +12,7 @@ import akshare as ak
 import pandas
 from fastmcp import FastMCP
 import datetime
+import urllib3
 
 MAX_DATA_ROW = 50
 
@@ -53,23 +54,55 @@ def get_current_time() -> dict:
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return {"current_time": current_time}
 
-# # 工具函数：财联社消息 - 修复版本
-# @mcp.tool()
-# def stock_info_global_cls() -> dict:
-#     """获取财联社消息
+# 工具函数：财联社消息 - 修复版本
+@mcp.tool()
+def stock_info_global_cls() -> dict:
+    """获取财联社消息
     
-#     数据来源: 财联社-电报
-#     网址: https://www.cls.cn/telegraph
+    数据来源: 财联社-电报
+    网址: https://www.cls.cn/telegraph
     
-#     Returns:
-#         dict: 财联社热点消息
-#     """
-#     try:
-#         result = ak.stock_info_global_cls()
-#         return process_dataframe_result(result, "cls_news_data")
-#     except Exception as e:
-#         return {"success": False, "error": str(e)}
+    Returns:
+        dict: 财联社热点消息
+    """
+    try:
+        result = stock_info_global_cls()
+        return process_dataframe_result(result, "cls_news_data")
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
+def stock_info_global_cls(symbol: str = "全部"): 
+    """
+    财联社-电报
+    https://www.cls.cn/telegraph
+    :param symbol: choice of {"全部", "重点"}
+    :type symbol: str
+    :return: 财联社-电报
+    :rtype: pandas.DataFrame
+    """
+    url = "https://www.cls.cn/nodeapi/telegraphList"
+    response = urllib3.request('GET', url, timeout=10)
+    data_json = response.json()
+    temp_df = pandas.DataFrame(data_json["data"]["roll_data"])
+    big_df = temp_df.copy()
+    big_df = big_df[["title", "content", "ctime", "level"]]
+    big_df["ctime"] = pandas.to_datetime(big_df["ctime"], unit="s", utc=True).dt.tz_convert(
+        "Asia/Shanghai"
+    )
+    big_df.columns = ["标题", "内容", "发布时间", "等级"]
+    big_df.sort_values(["发布时间"], inplace=True)
+    big_df.reset_index(inplace=True, drop=True)
+    big_df["发布日期"] = big_df["发布时间"].dt.date
+    big_df["发布时间"] = big_df["发布时间"].dt.time
+    if symbol == "重点":
+        big_df = big_df[(big_df["等级"] == "B") | (big_df["等级"] == "A")]
+        big_df.reset_index(inplace=True, drop=True)
+        big_df = big_df[["标题", "内容", "发布日期", "发布时间"]]
+        return big_df
+    else:
+        big_df = big_df[["标题", "内容", "发布日期", "发布时间"]]
+        return big_df
+    
 # 工具函数：上海证券交易所股票数据总貌
 @mcp.tool()
 def stock_sse_summary() -> dict:
@@ -451,6 +484,25 @@ def stock_fund_flow_individual(symbol: str) -> dict:
         return process_dataframe_result(result, "fund_flow_data")
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+# 工具函数：个股资金流数据 - 修复版本
+@mcp.tool()
+def stock_hsgt_sh_hk_spot_em() -> dict:
+    """ 获取沪深港通-港股通(沪>港)-股票
+
+    https://quote.eastmoney.com/center/gridlist.html#hk_sh_stocks
+   
+        
+    Returns:
+        dict: 包含沪深港通所有股票数据，代码,名称,最新价,涨跌额,涨跌幅,今开,最高,最低,昨收,成交量,成交额    
+    """
+    try:
+        result = ak.stock_hsgt_sh_hk_spot_em()
+        return process_dataframe_result(result, "hsgt_stock_data")
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 def main():
     mcp.run()
