@@ -39,6 +39,12 @@
             "args": [
                 "/home/wlq/mcp-test/stock-analysis-mcp/akshare_mcp-main/akshare_mcp/server.py",
             ]
+        },
+        "reutues-mcp": {
+            "command": "/home/wlq/miniconda3/bin/python",
+            "args": [
+                "/home/wlq/mcp-test/stock-analysis-mcp/neutus-ts/reutues-mcp.py",
+            ]
         }
 	},
 	"inputs": []
