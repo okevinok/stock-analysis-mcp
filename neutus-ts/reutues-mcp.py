@@ -368,6 +368,14 @@ def mcp_trending_topics(topics: List[str] = None, articles_per_topic: int = 5) -
             "trending_topics": {}
         }
 
+
+@mcp.tool()
+def cls_telegram():
+    """ 获取财联社实时电报 """
+    # https://www.cls.cn/telegraph
+    
+
+
 def main():
     """主函数"""
     print("🚀 启动 Reuters MCP 服务器...")
