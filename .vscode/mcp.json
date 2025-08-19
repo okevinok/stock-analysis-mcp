@@ -45,7 +45,8 @@
             "args": [
                 "/home/wlq/mcp-test/stock-analysis-mcp/neutus-ts/reutues-mcp.py",
             ]
-        }
+        },
+        ""
 	},
 	"inputs": []
 }

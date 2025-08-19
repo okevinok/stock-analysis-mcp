@@ -139,7 +139,7 @@ def process_articles_with_pagination_result(articles_result: Articles, descripti
 
 # 工具函数：获取当前时间
 @mcp.tool()
-def mcp_get_current_time() -> dict:
+def reuters_get_current_time() -> dict:
     """获取当前时间
     
     获取当前时间数据
@@ -152,7 +152,7 @@ def mcp_get_current_time() -> dict:
 
 # 工具函数：搜索Reuters文章
 @mcp.tool()
-def mcp_search_articles(keyword: str, offset: int = 0, size: int = 20) -> dict:
+def reuters_search_articles(keyword: str, offset: int = 0, size: int = 20) -> dict:
     """按关键词搜索Reuters文章
     
     数据来源: Reuters API - 文章搜索
@@ -186,7 +186,7 @@ def mcp_search_articles(keyword: str, offset: int = 0, size: int = 20) -> dict:
 
 # 工具函数：通过URL获取文章详情
 @mcp.tool()
-def mcp_article_by_url(article_path: str) -> dict:
+def reuters_article_by_url(article_path: str) -> dict:
     """通过URL路径获取文章详情
     
     数据来源: Reuters API - 文章详情
@@ -237,7 +237,7 @@ def mcp_article_by_url(article_path: str) -> dict:
 
 # 工具函数：多关键词搜索（高级搜索）
 @mcp.tool()
-def mcp_advanced_search(keywords: List[str], max_results_per_keyword: int = 10) -> dict:
+def reuters_advanced_search(keywords: List[str], max_results_per_keyword: int = 10) -> dict:
     """多关键词高级搜索
     
     对多个关键词分别进行搜索并合并结果
@@ -307,7 +307,7 @@ def mcp_advanced_search(keywords: List[str], max_results_per_keyword: int = 10) 
 
 # 工具函数：热门主题文章聚合
 @mcp.tool()
-def mcp_trending_topics(topics: List[str] = None, articles_per_topic: int = 5) -> dict:
+def reuters_trending_topics(topics: List[str] = None, articles_per_topic: int = 5) -> dict:
     """获取热门主题的文章聚合
     
     Args:
@@ -367,13 +367,6 @@ def mcp_trending_topics(topics: List[str] = None, articles_per_topic: int = 5) -
             "error": f"获取热门主题失败: {str(e)}",
             "trending_topics": {}
         }
-
-
-@mcp.tool()
-def cls_telegram():
-    """ 获取财联社实时电报 """
-    # https://www.cls.cn/telegraph
-    
 
 
 def main():

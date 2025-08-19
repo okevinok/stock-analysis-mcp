@@ -16,7 +16,7 @@
     "mcp-akshare": {
       "command": "uvx",
       "args": [
-        "mcp-akshare"
+        "mcp-akshare-hust"
       ]
     }
 }

@@ -1,8 +1,10 @@
 {
     "chat.mcp.serverSampling": {
-        "stock-analysis-mcp/.vscode/mcp.json: baidu-maps": {
+        "stock-analysis-mcp/.vscode/mcp.json: akshare-mcp": {
             "allowedModels": [
-                "github.copilot-chat/gpt-4.1"
+                "github.copilot-chat/gpt-4.1",
+                "github.copilot-chat/gemini-2.5-pro",
+                "github.copilot-chat/gpt-5-mini"
             ]
         }
     }

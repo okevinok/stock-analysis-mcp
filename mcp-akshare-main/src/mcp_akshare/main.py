@@ -7,7 +7,7 @@ AKShare MCP Server - 重构版本
 这是一个基于AKShare的股票数据MCP服务器，使用FastMCP框架构建。
 重构后的版本具有更好的可维护性和扩展性。
 """
-
+import os
 import akshare as ak
 import pandas as pd
 from fastmcp import FastMCP
@@ -23,10 +23,16 @@ import logging
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# 禁用所有代理设置
+proxy_env_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
+for var in proxy_env_vars:
+    if var in os.environ:
+        del os.environ[var]
+        
 # 配置类
 @dataclass
 class MCPConfig:
-    """MCP服务器配置"""
+    """MCP服务器配置"""   
     max_data_rows: int = 50
     default_timeout: int = 30
     service_name: str = "AKShare股票数据服务"
@@ -146,7 +152,7 @@ class AKShareDataProvider:
             return pd.DataFrame()
     
     @staticmethod
-    def get_stock_realtime(symbol: str) -> dict:
+    def stock_bid_ask_em(symbol: str) -> dict:
         """获取股票实时数据"""
         try:
             return ak.stock_bid_ask_em(symbol=symbol)
@@ -215,7 +221,21 @@ def stock_bid_ask_em(symbol: str) -> dict:
     Args:
         symbol: 股票代码，如"000001"
     """
-    return akshare_provider.get_stock_realtime(symbol)
+    return akshare_provider.stock_bid_ask_em(symbol)
+
+@registry.register_tool(category="stock_quote", description="获取A股分时行情数据")
+def get_stock_data(symbol: str) -> dict:
+    """ 沪深京 A 股-每日行情
+        https://quote.eastmoney.com/concept/sh603777.html?from=classic
+    Args:
+        symbol: 股票代码，如"000001"
+        period: choice of {'daily', 'weekly', 'monthly'}
+        start_date: 开始日期
+        end_date: 结束日期
+        adjust: choice of {"qfq": "前复权", "hfq": "后复权", "": "不复权"}
+        timeout: choice of None or a positive float number
+    """
+    return akshare_provider.get_stock_data(symbol)
 
 @registry.register_tool(category="stock_quote", description="获取风险警示板股票行情")
 def stock_zh_a_st_em() -> dict:
@@ -335,6 +355,136 @@ def list_available_tools() -> dict:
             for name, info in tools.items()
         }
     return tools_by_category
+
+# 工具函数：个股资金流数据 - 修复版本
+@registry.register_tool(category="stock_stats", description="获取个股资金流数据")
+def stock_fund_flow_individual(symbol: str) -> dict:
+    """获取个股资金流数据
+    网址: https://data.10jqka.com.cn/funds/ggzjl/#refCountId=data_55f13c2c_254
+    Args:
+        symbol: 时间周期，可选值: 
+               "即时"(默认), 
+               "3日排行", 
+               "5日排行", 
+               "10日排行", 
+               "20日排行"
+    Returns:
+        dict: 包含个股资金流数据的字典，包括流入流出资金、净额等
+    """
+    return ak.stock_fund_flow_individual(symbol=symbol)
+
+@registry.register_tool(category="stock_stats", description=" 获取沪深港通-港股通(沪>港)-股票")
+def stock_hsgt_sh_hk_spot_em() -> dict:
+    """ 获取沪深港通-港股通(沪>港)-股票
+    https://quote.eastmoney.com/center/gridlist.html#hk_sh_stocks
+    Returns:
+        dict: 包含沪深港通所有股票数据，代码,名称,最新价,涨跌额,涨跌幅,今开,最高,最低,昨收,成交量,成交额    
+    """
+    return ak.stock_hsgt_sh_hk_spot_em()
+
+@registry.register_tool(category="market_stats", description=" 获取股票主力控盘与机构参与度数据")
+def stock_comment_detail_zlkp_jgcyd_em(symbol: str) -> dict:
+    """获取股票主力控盘与机构参与度数据
+    Args:
+        symbol: 股票代码，如"600000"
+    Returns:
+        dict: 包含主力控盘和机构参与度数据的字典，机构参与度单位为%
+    """
+    return ak.stock_comment_detail_zlkp_jgcyd_em(symbol=symbol)
+
+@registry.register_tool(category="stock_stats", description=" 获取上市公司主营构成数据")
+def stock_zygc_em(symbol: str) -> dict:
+    """获取上市公司主营构成数据
+    Args:
+        symbol: 带市场标识的股票代码，如"SH688041"(上海)或"SZ000001"(深圳)
+    Returns:
+        dict: 包含公司主营构成数据的字典，包括收入、成本、利润及比例等财务指标
+    """
+    return ak.stock_zygc_em(symbol=symbol)
+
+@registry.register_tool(category="stock_quote", description=" 获取港股分时行情数据")
+def stock_hk_hist_min_em(symbol: str, period: str = "5", adjust: str = "", 
+                        start_date: str = "1979-09-01 09:32:00", 
+                        end_date: str = "2222-01-01 09:32:00") -> dict:
+    """获取港股分时行情数据
+    Args:
+        symbol: 港股代码(可通过ak.stock_hk_spot_em()获取)，如"01611"
+        period: 时间周期，可选值: '1'(1分钟), '5'(5分钟), '15'(15分钟), '30'(30分钟), '60'(60分钟)
+        adjust: 复权类型，可选值: 
+               ""(默认): 不复权
+               "qfq": 前复权
+               "hfq": 后复权
+        start_date: 开始日期时间，格式为"YYYY-MM-DD HH:MM:SS"，默认"1979-09-01 09:32:00"
+        end_date: 结束日期时间，格式为"YYYY-MM-DD HH:MM:SS"，默认"2222-01-01 09:32:00"
+    Returns:
+        dict: 包含港股分时行情数据的字典，包括时间、价格、成交量等
+    """
+    return ak.stock_hk_hist_min_em(symbol=symbol, period=period, adjust=adjust,
+                                       start_date=start_date, end_date=end_date)
+
+@registry.register_tool(category="stock_quote", description=" 获取美股分时行情数据")
+def stock_us_hist_min_em(symbol: str, start_date: str = "1979-09-01 09:32:00", end_date: str = "2222-01-01 09:32:00") -> dict:
+    """获取美股分时行情数据
+    Args:
+        symbol: 美股代码(可通过ak.stock_us_spot_em()获取)，如"105.ATER"
+        start_date: 开始日期时间，格式为"YYYY-MM-DD HH:MM:SS"，默认"1979-09-01 09:32:00"
+        end_date: 结束日期时间，格式为"YYYY-MM-DD HH:MM:SS"，默认"2222-01-01 09:32:00"
+    Returns:
+        dict: 包含美股分时行情数据的字典，包括时间、价格、成交量等
+    """
+    return ak.stock_us_hist_min_em(symbol=symbol, start_date=start_date, end_date=end_date)
+
+@registry.register_tool(category="stock_quote", description="获取A+H股历史行情数据")
+def stock_zh_ah_daily(symbol: str, start_year: str, end_year: str, adjust: str = "") -> dict:
+    """获取A+H股历史行情数据
+    Args:
+        symbol: 港股股票代码，如"02318"(可通过ak.stock_zh_ah_name()获取)
+        start_year: 开始年份，如"2000"
+        end_year: 结束年份，如"2019"
+        adjust: 复权类型，可选值: 
+               ""(默认): 不复权
+               "qfq": 前复权
+               "hfq": 后复权
+    Returns:
+        dict: 包含A+H股历史行情数据的字典，包括日期、价格、成交量等
+    """
+    return ak.stock_zh_ah_daily(symbol=symbol, start_year=start_year, end_year=end_year, adjust=adjust)
+
+# 工具函数：新股上市首日数据
+@registry.register_tool(category="stock_quote", description="获取新股上市首日数据")
+def stock_xgsr_ths() -> dict:
+    """获取新股上市首日数据
+    Returns:
+        dict: 包含新股上市首日数据的字典，包括发行价、首日价格表现、涨跌幅及破发情况
+    """
+    return ak.stock_xgsr_ths()
+
+@registry.register_tool(category="stock_quote", description="获取科创板股票历史行情数据")
+def stock_zh_kcb_daily(symbol: str, adjust: str = "") -> dict:
+    """获取科创板股票历史行情数据
+    Args:
+        symbol: 带市场标识的股票代码，如"sh688008"
+        adjust: 复权类型，可选值: 
+               ""(默认): 不复权
+               "qfq": 前复权
+               "hfq": 后复权
+               "hfq-factor": 后复权因子
+               "qfq-factor": 前复权因子
+    Returns:
+        dict: 包含科创板股票历史行情数据的字典，包括日期、价格、成交量等
+    """
+    return ak.stock_zh_kcb_daily(symbol=symbol, adjust=adjust)
+
+@registry.register_tool(category="market_stats", description="获取深圳证券交易所-统计资料-股票行业成交数据")
+def stock_szse_sector_summary(symbol: str, date: str) -> dict:
+    """获取深圳证券交易所-统计资料-股票行业成交数据
+    Args:
+        symbol: 统计周期，可选值: "当月" 或 "当年"
+        date: 统计年月，格式为YYYYMM，如"202501"
+    Returns:
+        dict: 包含股票行业成交数据的字典，包括交易天数、成交金额、成交股数、成交笔数等
+    """
+    return ak.stock_szse_sector_summary(symbol=symbol, date=date)
 
 def main():
     """主函数"""

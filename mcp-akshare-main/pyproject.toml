@@ -1,13 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "mcp-akshare"
-version = "0.0.1"
-description = "Add your description here"
+name = "mcp-akshare-hust"
+version = "0.1.1"
+description = "A Model Context Protocol server for AKShare stock data"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "akshare>=1.16.76", 
-    "fastmcp>=2.0.0"
+    "fastmcp>=2.0.0",
+    "pandas>=2.3.1",
+    "urllib3>=2.2.3",
+    "requests>=2.32.3",
+    "bs4>=0.0.2",
 ]
 
 [project.scripts]
-mcp-akshare = "main:main"
+mcp-akshare-hust = "mcp_akshare.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_akshare"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+]
